@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+        }
+        button {
+            padding: 8px 12px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Invoice List</h1>
+    <button onclick="loadInvoices()">Load Invoices</button>
+    <table id="invoiceTable">
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Invoice data will be loaded here -->
+        </tbody>
+    </table>
+
+    <h2>Create New Invoice</h2>
+    <form id="invoiceForm">
+        <label for="customer">Customer:</label>
+        <input type="text" id="customer" required><br><br>
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" required><br><br>
+        <label for="dueDate">Due Date:</label>
+        <input type="date" id="dueDate" required><br><br>
+        <label for="description">Description:</label>
+        <textarea id="description" required></textarea><br><br>
+        <button type="submit">Create Invoice</button>
+    </form>
+
+    <script>
+        // Load invoices from the backend
+        async function loadInvoices() {
+            try {
+                const response = await fetch('http://localhost:8080/api/invoices');
+                const invoices = await response.json();
+                const tableBody = document.querySelector("#invoiceTable tbody");
+                tableBody.innerHTML = "";
+                invoices.forEach(invoice => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${invoice.customer}</td>
+                        <td>${invoice.amount}</td>
+                        <td>${new Date(invoice.due_date).toLocaleDateString()}</td>
+                        <td>${invoice.description}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error loading invoices:", error);
+            }
+        }
+
+        // Submit a new invoice to the backend
+        document.getElementById('invoiceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const customer = document.getElementById('customer').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const dueDate = document.getElementById('dueDate').value;
+            const description = document.getElementById('description').value;
+
+            const invoice = { customer, amount, due_date: dueDate, description };
+
+            try {
+                const response = await fetch('http://localhost:8080/api/invoice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(invoice),
+                });
+
+                const newInvoice = await response.json();
+                alert("Invoice created: " + newInvoice.id);
+                loadInvoices(); // Refresh the invoice list
+            } catch (error) {
+                console.error("Error creating invoice:", error);
+            }
+        });
+    </script>
+</body>
+</html>
